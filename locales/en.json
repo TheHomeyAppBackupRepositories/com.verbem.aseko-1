@@ -1,0 +1,7 @@
+{
+    "APP": {
+        "text-appInfo": "Aseko integration of ASIN Pool.",
+        "text-filterOptions": "When you change the Delay time at startup time, you need to restart this app",
+        "save-Preference": "Save preference"
+    }
+}

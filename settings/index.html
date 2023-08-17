@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+		<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+	</head>
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="navbar bg-dark navbar-dark" style="border-top-left-radius: 15px; border-top-right-radius: 15px;">
+		<div class="container-fluid" style="padding-left:15px; padding-right:15px; padding-top: 15px; padding-bottom: 0px;">
+			<table class="table table-borderless table-sm" style="text-align: center; vertical-align: middle; color: white">
+				<thead>
+					<tr>
+						<th scope="col" id="tab-App" onclick="panelControl('panel-App')">Info</th>  
+						<th scope="col" id="tab-Log" onclick="panelControl('panel-Log')">Log</th>
+					</tr>              
+				</thead>
+			</table>
+		</div>
+    </nav>
+  
+    <!-- PANEL APP INTRODUCTION -->
+    <div id="panel-App" class="container-fluid" style="padding: 0px; display:none;">
+		<div class="card">
+			<h5 class="card-header bg-secondary text-white text-center">Introduction</h5>
+
+			<div class="card-body">
+				<p class="card-text" data-i18n="APP.text-appInfo"></p>
+				<br>
+				<p class="card-text" data-i18n="APP.text-filterOptions"></p>
+			</div>
+
+			<div class="form-check">
+				<input type="radio" class="form-check-input" id="FilteredAlarms" name="optradio" value="option2" checked>
+				<label class="form-check-label" for="radio2">Alarms to Homey timeline/triggers during filtration</label>
+			</div>
+			<div class="form-check">
+				<input type="radio" class="form-check-input" id="AllAlarms" name="optradio" value="option1">
+				<label class="form-check-label" for="radio1">Alarms always to Homey timeline/triggers</label>
+			</div>
+			<div class="form-check">
+				<input type="radio" class="form-check-input" id="NoAlarms" name="optradio" value="option3">
+				<label class="form-check-label" for="radio3">No alarms to Homey timeline/triggers</label>
+			</div>
+			
+			<button id="save-Preference" type="button" class="btn btn-outline-secondary btn-block" data-i18n="APP.save-Preference"></button>
+			<h5 class="card-footer bg-secondary text-white text-center" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;"></h5>
+		</div>
+
+    </div>
+
+    <!-- PANEL LOG -->
+    <div id="panel-Log" class="container-fluid" style="padding: 0px; display:none;">
+
+      <div class="card">
+        <h5 class="card-header bg-secondary text-white text-center">Logging</h5>
+        <div class="card-body d-grid">
+            <button id="clearLog" type="button" style="display:none" class="btn btn-outline-secondary btn-block">Clear Log</button>
+        </div>
+        <div id="loglines"> </div>
+        <h5 class="card-footer bg-secondary text-white text-center" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;"></h5>
+      </div>
+
+    </div>
+
+
+</body>
+</html>
+<script type="text/javascript">
+
+const panelApp = document.getElementById('panel-App')
+const panelLog = document.getElementById('panel-Log')
+const loglinesElement = document.getElementById('loglines');
+
+const tabAppElement = document.getElementById('tab-App');
+const tabLogElement = document.getElementById('tab-Log');
+const settings = {};
+
+function displayLogs(lines) {
+	loglinesElement.innerHTML = lines;
+}
+
+function updateLogs() {
+
+    try {
+      displayLogs('<table class="table table-sm text-nowrap" style="width: 1200px; padding: 1px; font-size: smaller;"><tr class="table-info"><td>Refreshing......</td></tr></table>');
+
+      Homey.api('GET', '/getLogs/', null, (err, result) => {
+        if (!err) {
+          	let lines = '<table class="table table-sm text-nowrap" style="width: 1200px; padding: 1px; font-size: smaller;">';
+          	result
+				.reverse()
+				.forEach((line) => {
+					lines += `<tr>${line}</tr>`;
+            });
+          	lines += '</table>'
+          	displayLogs(lines);
+			} else {
+				displayLogs(`table class="table table-sm text-nowrap" style="width: 1200px; padding: 1px; font-size: smaller;"><tr class="table-danger"><td>${err}</td></tr></table>`);
+			}
+      	});
+    } 	catch (e) {
+      	displayLogs(`<table class="table table-sm text-nowrap" style="width: 1200px; padding: 1px; font-size: smaller;"><tr class="table-danger"><td>${e}</td></tr></table>`);
+    }
+}
+
+function ShowSecret(element) {
+
+    if (document.getElementById(element).style.color === "transparent") {
+      	document.getElementById(element).style = document.getElementById("user-Landroid").style;
+    } 	else {
+		document.getElementById(element).style.color = "transparent";
+		document.getElementById(element).style.textShadow = "0 0 8px black";
+		document.getElementById(element).style.display = "block";
+    }
+}
+
+function alarmsSelector() {
+    let alarmSelected = 'FilteredAlarms';
+    if(document.getElementById('AllAlarms').checked) {alarmSelected = 'AllAlarms';}
+    if(document.getElementById('NoAlarms').checked) {alarmSelected = 'NoAlarms';}
+    return alarmSelected;
+}
+
+function panelControl(action) {
+    panelLog.style.display = 'none';
+    loglinesElement.style.display = 'none';
+    panelApp.style.display = 'none';
+
+    tabAppElement.style.backgroundColor = '#212529' // bg-dark
+    tabLogElement.style.backgroundColor = '#212529' // bg-dark
+
+    switch (action) {
+      	case 'panel-App':
+			panelApp.style.display = 'block';
+			tabAppElement.style.backgroundColor = '#6c757d' // bg-secondary
+			break;
+      	case 'panel-Log':
+			panelLog.style.display = 'block';
+			loglinesElement.style.display = 'block';
+			tabLogElement.style.backgroundColor = '#6c757d' // bg-secondary
+			updateLogs();
+			break;
+      	default:
+    };
+}
+
+	document.getElementById('save-Preference').addEventListener('click', function (e) {
+		settings.preference = alarmsSelector();
+		Homey.set('preferences', settings , function( err ){
+			if (err) return Homey.alert('Set Preferences Error', err);
+			else (Homey.alert('Preference saved'))
+		}); 
+		
+	});
+  
+
+function onHomeyReady(Homey) {
+
+    Homey.get('preferences', (err, settings) => {
+		if ( err ) {
+			return Homey.alert(`Get Preferences Error ${err}`);
+		} 
+		if (settings.preference === 'NoAlarms') document.getElementById('NoAlarms').checked = true;
+		else if (settings.preference === 'AllAlarms') document.getElementById('AllAlarms').checked = true;
+		else document.getElementById('FilteredAlarms').checked = true;
+
+    });
+
+    Homey.on('error', err => {
+      	if (err) return Homey.alert(`Authentication error ${err}`);
+    });
+
+    panelControl('panel-App');
+    Homey.ready();
+}
+</script>
